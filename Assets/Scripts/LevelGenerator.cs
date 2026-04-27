@@ -114,8 +114,16 @@ public class LevelGenerator : MonoBehaviour
 
     public void ResetTower()
     {
-        foreach (var r in activeRings)
-            if (r != null) Destroy(r);
+        // Borrar todo lo generado en runs anteriores, incluso si no quedó en activeRings.
+        for (int i = transform.childCount - 1; i >= 0; i--)
+        {
+            Transform child = transform.GetChild(i);
+            if (child != null)
+            {
+                child.gameObject.SetActive(false);
+                Destroy(child.gameObject);
+            }
+        }
 
         activeRings.Clear();
         nextRingY = startY;

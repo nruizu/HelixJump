@@ -18,6 +18,11 @@ public class RingBuilder : MonoBehaviour
     public Material safeMaterial;
     public Material dangerMaterial;
 
+    [Header("Audio")]
+    public AudioClip ringBreakClip;
+    [Range(0f, 1f)] public float ringBreakVolume = 0.8f;
+    [Range(0f, 0.2f)] public float ringBreakPitchJitter = 0.05f;
+
     [Header("Rotación inicial aleatoria")]
     public bool randomRotation = true;
 
@@ -111,6 +116,9 @@ public class RingBuilder : MonoBehaviour
         GameObject triggerGO = new GameObject("RingTrigger");
         triggerGO.transform.SetParent(transform, false);
         RingTrigger rt = triggerGO.AddComponent<RingTrigger>();
+        rt.ringBreakClip = ringBreakClip;
+        rt.ringBreakVolume = ringBreakVolume;
+        rt.ringBreakPitchJitter = ringBreakPitchJitter;
         rt.Setup(this, transform.position.y);
     }
 

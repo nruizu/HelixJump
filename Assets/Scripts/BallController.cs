@@ -1,8 +1,11 @@
 using UnityEngine;
 using System.Collections;
+using System;
 
 public class BallController : MonoBehaviour
 {
+    public static event Action OnPlayerDied;
+
     [Header("Física")]
     public float gravityScale  = 2.0f;
     public float maxFallSpeed  = 15f;
@@ -18,11 +21,25 @@ public class BallController : MonoBehaviour
     public float splashPrefabScale = 1f;
     public float splashPrefabYOffset = 0.02f;
     public bool alignSplashToNormal = true;
+    public bool stickSplashToPlatform = true;
+    public bool overrideSplashColor = true;
+    public Color splashColor = new Color(1f, 0.6f, 0.18f, 1f);
+
+    [Header("Audio")]
+    public AudioClip bounceClip;
+    [Range(0f, 1f)] public float bounceVolume = 0.75f;
+    [Range(0f, 0.2f)] public float bounceMinInterval = 0.04f;
+    [Range(0f, 0.3f)] public float bouncePitchJitter = 0.08f;
+    [Range(0f, 1f)] public float bounceSpatialBlend = 0.7f;
+    public AudioClip loseClip;
+    [Range(0f, 1f)] public float loseVolume = 0.85f;
+    [Range(0f, 0.3f)] public float losePitchJitter = 0.04f;
 
     [Header("Muerte - Dissolve")]
     public bool enableDissolveOnDeath = true;
     public float dissolveDuration = 0.65f;
     public Material dissolveMaterialTemplate;
+    public Shader dissolveShaderReference;
 
     private Rigidbody rb;
     private SphereCollider sphereCollider;
@@ -30,6 +47,7 @@ public class BallController : MonoBehaviour
     private Material[] originalMaterials;
     private Material dissolveMaterialInstance;
     private Coroutine deathRoutine;
+    private float lastBounceSfxTime = -10f;
     private bool warnedMissingSplashPrefab;
     private bool      isDead = false;
 
@@ -95,7 +113,7 @@ public class BallController : MonoBehaviour
             pos.y = hit.point.y + radius + collisionSkin;
             rb.position = pos;
             velocity.y = bounceForce;
-            EmitBounceSplash(hit.point, hit.normal);
+            EmitBounceSplash(hit.point, hit.normal, hit.collider);
         }
     }
 
@@ -116,7 +134,7 @@ public class BallController : MonoBehaviour
             if (collision.contactCount > 0)
             {
                 ContactPoint contact = collision.GetContact(0);
-                EmitBounceSplash(contact.point, contact.normal);
+                EmitBounceSplash(contact.point, contact.normal, collision.collider);
             }
         }
     }
@@ -128,6 +146,8 @@ public class BallController : MonoBehaviour
         isDead            = true;
         rb.linearVelocity = Vector3.zero;
         rb.useGravity     = false;
+        PlayLoseSfxAt(transform.position);
+        OnPlayerDied?.Invoke();
 
         if (enableDissolveOnDeath)
         {
@@ -170,10 +190,12 @@ public class BallController : MonoBehaviour
 
         if (source == null)
         {
-            Shader dissolveShader = Shader.Find("Custom/BallDissolveURP");
+            Shader dissolveShader = dissolveShaderReference != null
+                ? dissolveShaderReference
+                : Shader.Find("Custom/BallDissolveURP");
             if (dissolveShader == null)
             {
-                Debug.LogWarning("No se encontró el shader Custom/BallDissolveURP para el efecto de muerte.");
+                Debug.LogWarning("No se encontró el shader de disolución. Asigna dissolveMaterialTemplate o dissolveShaderReference en BallController.");
                 return false;
             }
 
@@ -207,11 +229,13 @@ public class BallController : MonoBehaviour
         return true;
     }
 
-    void EmitBounceSplash(Vector3 position, Vector3 normal)
+    void EmitBounceSplash(Vector3 position, Vector3 normal, Collider platformCollider)
     {
+        PlayBounceSfxAt(position);
+
         if (!enableBounceSplash) return;
 
-        if (!TrySpawnSplashPrefab(position, normal))
+        if (!TrySpawnSplashPrefab(position, normal, platformCollider))
         {
             if (!warnedMissingSplashPrefab)
             {
@@ -221,7 +245,7 @@ public class BallController : MonoBehaviour
         }
     }
 
-    bool TrySpawnSplashPrefab(Vector3 position, Vector3 normal)
+    bool TrySpawnSplashPrefab(Vector3 position, Vector3 normal, Collider platformCollider)
     {
         if (splashPrefab == null)
             return false;
@@ -230,9 +254,14 @@ public class BallController : MonoBehaviour
             ? Quaternion.LookRotation(normal)
             : Quaternion.identity;
 
+        bool attachToPlatform = stickSplashToPlatform && platformCollider != null;
         Vector3 spawnPosition = position + normal * splashPrefabYOffset;
+
         GameObject instance = Instantiate(splashPrefab, spawnPosition, rotation);
-        instance.transform.SetParent(null, true);
+        if (attachToPlatform)
+            instance.transform.SetParent(platformCollider.transform, true);
+        else
+            instance.transform.SetParent(null, true);
         instance.transform.localScale *= Mathf.Max(0.01f, splashPrefabScale);
 
         ParticleSystem[] systems = instance.GetComponentsInChildren<ParticleSystem>(true);
@@ -245,8 +274,12 @@ public class BallController : MonoBehaviour
             {
                 ParticleSystem ps = systems[i];
                 var main = ps.main;
-                main.simulationSpace = ParticleSystemSimulationSpace.World;
+                main.simulationSpace = attachToPlatform
+                    ? ParticleSystemSimulationSpace.Local
+                    : ParticleSystemSimulationSpace.World;
                 main.loop = false;
+                if (overrideSplashColor)
+                    main.startColor = splashColor;
                 float life = main.duration + main.startLifetime.constantMax;
                 if (life > maxLifetime) maxLifetime = life;
             }
@@ -254,6 +287,54 @@ public class BallController : MonoBehaviour
 
         Destroy(instance, maxLifetime + 0.5f);
         return true;
+    }
+
+    void PlayBounceSfxAt(Vector3 position)
+    {
+        if (bounceClip == null)
+            return;
+
+        if (Time.time - lastBounceSfxTime < bounceMinInterval)
+            return;
+
+        lastBounceSfxTime = Time.time;
+
+        GameObject sfxGO = new GameObject("BounceSFX");
+        sfxGO.transform.position = position;
+        AudioSource sfxSource = sfxGO.AddComponent<AudioSource>();
+        sfxSource.playOnAwake = false;
+        sfxSource.spatialBlend = bounceSpatialBlend;
+        sfxSource.pitch = 1f + UnityEngine.Random.Range(-bouncePitchJitter, bouncePitchJitter);
+        sfxSource.volume = bounceVolume;
+        sfxSource.clip = bounceClip;
+        sfxSource.rolloffMode = AudioRolloffMode.Linear;
+        sfxSource.minDistance = 1f;
+        sfxSource.maxDistance = 25f;
+        sfxSource.dopplerLevel = 0f;
+        sfxSource.Play();
+
+        float clipDuration = bounceClip.length / Mathf.Max(0.01f, Mathf.Abs(sfxSource.pitch));
+        Destroy(sfxGO, clipDuration + 0.05f);
+    }
+
+    void PlayLoseSfxAt(Vector3 position)
+    {
+        if (loseClip == null)
+            return;
+
+        GameObject sfxGO = new GameObject("LoseSFX");
+        sfxGO.transform.position = position;
+        AudioSource sfxSource = sfxGO.AddComponent<AudioSource>();
+        sfxSource.playOnAwake = false;
+        sfxSource.spatialBlend = 0f;
+        sfxSource.pitch = 1f + UnityEngine.Random.Range(-losePitchJitter, losePitchJitter);
+        sfxSource.volume = loseVolume;
+        sfxSource.clip = loseClip;
+        sfxSource.dopplerLevel = 0f;
+        sfxSource.Play();
+
+        float clipDuration = loseClip.length / Mathf.Max(0.01f, Mathf.Abs(sfxSource.pitch));
+        Destroy(sfxGO, clipDuration + 0.05f);
     }
 
     public void ResetBall(Vector3 startPosition)

@@ -360,6 +360,56 @@ Transform:
   m_Children: []
   m_Father: {fileID: 217534528}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &771667846
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 771667848}
+  - component: {fileID: 771667847}
+  m_Layer: 0
+  m_Name: GameUI
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &771667847
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 771667846}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5294b1f43963f04da61c4fe42e849f5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameUIManager
+  ballController: {fileID: 1969006612}
+  levelGenerator: {fileID: 465142387}
+  cameraFollow: {fileID: 330585548}
+  towerController: {fileID: 0}
+  loseTitle: Perdiste
+  loseMenuDelay: 1
+--- !u!4 &771667848
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 771667846}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1.2652, y: 2.6407, z: -3.04126}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -476,7 +526,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 624b39a261247804f915b482e1d5e5a9, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -518,7 +568,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 100, z: 1}
+  m_LocalScale: {x: 1, y: 100000, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1910986829}
@@ -637,7 +687,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 4ba2b70584ada394cab4848436566d69, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -699,6 +749,30 @@ MonoBehaviour:
   gravityScale: 2
   maxFallSpeed: 15
   bounceForce: 8
+  platformMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  collisionSkin: 0.02
+  enableBounceSplash: 1
+  splashPrefab: {fileID: 8585649807550039280, guid: 224c4574d4d272a4b92df19ede61b338,
+    type: 3}
+  splashPrefabScale: 1
+  splashPrefabYOffset: 0.02
+  alignSplashToNormal: 0
+  stickSplashToPlatform: 1
+  overrideSplashColor: 1
+  splashColor: {r: 1, g: 0.6, b: 0.18, a: 1}
+  bounceClip: {fileID: 8300000, guid: 30a95addd753fe546876d81a07d968a1, type: 3}
+  bounceVolume: 0.568
+  bounceMinInterval: 0.04
+  bouncePitchJitter: 0.08
+  bounceSpatialBlend: 0.7
+  loseClip: {fileID: 8300000, guid: db8b16da5a9fe8046b981975d1f98959, type: 3}
+  loseVolume: 0.85
+  losePitchJitter: 0.04
+  enableDissolveOnDeath: 1
+  dissolveDuration: 0.65
+  dissolveMaterialTemplate: {fileID: 0}
 --- !u!54 &1969006613
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -736,6 +810,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2124371593}
   - component: {fileID: 2124371592}
+  - component: {fileID: 2124371594}
   m_Layer: 0
   m_Name: Directional Light
   m_TagString: Untagged
@@ -817,12 +892,41 @@ Transform:
   m_GameObject: {fileID: 2124371591}
   serializedVersion: 2
   m_LocalRotation: {x: 0.56433475, y: -0.085872464, z: 0.13210635, w: 0.81037045}
-  m_LocalPosition: {x: 1.05, y: -0.33, z: -0.92}
+  m_LocalPosition: {x: 1.707, y: 6.166, z: -5.726}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 69.608, y: 1.633, z: 19.653}
+--- !u!114 &2124371594
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2124371591}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_CustomShadowLayers: 0
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 0
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_ShadowRenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_Version: 4
+  m_LightLayerMask: 1
+  m_ShadowLayerMask: 1
+  m_RenderingLayers: 1
+  m_ShadowRenderingLayers: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -832,3 +936,4 @@ SceneRoots:
   - {fileID: 832575519}
   - {fileID: 1910986829}
   - {fileID: 1969006611}
+  - {fileID: 771667848}
